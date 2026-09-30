@@ -2,7 +2,7 @@
 
 Uso: .venv/bin/python convert.py imagen.png salida_id [--colors 140] [--size 1200] [--min-area 450]
 
-Genera en ../catalog/<salida_id>/:
+Genera en ../app/catalog/<salida_id>/:
   regions.png  mapa de zonas (id = R*256 + G)
   data.json    paleta y, por zona: color, posición del número y radio libre
   thumb.jpg    miniatura terminada · line.png  miniatura solo contornos
@@ -105,7 +105,7 @@ pos = ndi.maximum_position(dist, R, rid); rr = ndi.maximum(dist, R, rid)
 regions = [[cnum[int(reg_color[i])], int(pos[i][1]), int(pos[i][0]), round(float(rr[i]), 1)] for i in range(N)]
 print(f'zonas finales: {N}, colores: {len(palette)}')
 
-out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'catalog', a.name)
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'app', 'catalog', a.name)
 os.makedirs(out, exist_ok=True)
 enc = np.zeros((H, W, 3), np.uint8); enc[..., 0] = R >> 8; enc[..., 1] = R & 255
 Image.fromarray(enc).save(os.path.join(out, 'regions.png'), optimize=True)

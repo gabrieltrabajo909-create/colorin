@@ -1,8 +1,8 @@
 {
-  "id": "/colorin/?app=3",
+  "id": "/colorin/app/",
   "name": "Colorin",
   "short_name": "Colorin",
-  "start_url": "./?app=3",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
