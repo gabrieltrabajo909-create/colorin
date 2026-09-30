@@ -142,7 +142,7 @@ async function openPic(id){
 
   const pal = data.palette.map(hex);
   const reg = data.regions;           // [color, x, y, radio] ; zona i+1
-  const saved = store.get('fill-' + id);
+  const saved = store.get('fill-' + id + '-' + N);   // si el dibujo cambia de zonas, empieza de cero
   const filled = new Uint8Array(N + 1);
   if (saved) { try { const b = atob(saved); for (let r = 1; r <= N; r++) filled[r] = (b.charCodeAt(r >> 3) >> (r & 7)) & 1; } catch {} }
   const remain = new Int32Array(pal.length), totalC = new Int32Array(pal.length);
@@ -301,7 +301,7 @@ function save(){
   const bytes = new Uint8Array((P.N >> 3) + 1);
   for (let r = 1; r <= P.N; r++) if (P.filled[r]) bytes[r >> 3] |= 1 << (r & 7);
   let s = ''; bytes.forEach(b => s += String.fromCharCode(b));
-  store.set('fill-' + P.id, btoa(s));
+  store.set('fill-' + P.id + '-' + P.N, btoa(s));
   store.set('pct-' + P.id, P.done === P.N ? 100 : Math.floor(P.done / P.N * 100));
 }
 addEventListener('visibilitychange', () => { if (document.hidden) save(); });
