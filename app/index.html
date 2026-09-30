@@ -170,9 +170,15 @@ async function openPic(id){
   const saved = store.get('fill-' + id + '-' + N);   // si el dibujo cambia de zonas, empieza de cero
   const filled = new Uint8Array(N + 1);
   if (saved) { try { const b = atob(saved); for (let r = 1; r <= N; r++) filled[r] = (b.charCodeAt(r >> 3) >> (r & 7)) & 1; } catch {} }
+  // zonas marcadas como detalle (5.º dato = 1): vienen pintadas y no cuentan
   const remain = new Int32Array(pal.length), totalC = new Int32Array(pal.length);
-  let done = 0;
-  for (let r = 1; r <= N; r++) { const c = reg[r - 1][0]; totalC[c]++; if (filled[r]) done++; else remain[c]++; }
+  let done = 0, NP = 0;
+  for (let r = 1; r <= N; r++) {
+    const c = reg[r - 1][0];
+    if (reg[r - 1][4]) { filled[r] = 1; continue; }
+    NP++; totalC[c]++; if (filled[r]) done++; else remain[c]++;
+  }
+  const lineCol = hex(data.line || '#3a3037');
 
   // capa de pintura (blanco / color) y capa de contornos
   const paint = new OffscreenCanvas(w, h), paintCtx = paint.getContext('2d');
@@ -180,20 +186,20 @@ async function openPic(id){
   const lines = new OffscreenCanvas(w, h), lctx = lines.getContext('2d'), limg = lctx.createImageData(w, h);
   for (let i = 0; i < ids.length; i++) {
     const r = ids[i], j = i * 4;
-    const col = filled[r] ? pal[reg[r - 1][0]] : [255, 255, 255];
+    const col = r === 0 ? lineCol : filled[r] ? pal[reg[r - 1][0]] : [255, 255, 255];
     img.data[j] = col[0]; img.data[j+1] = col[1]; img.data[j+2] = col[2]; img.data[j+3] = 255;
     const x = i % w;
     if ((x < w - 1 && ids[i + 1] !== r) || (i + w < ids.length && ids[i + w] !== r)) { limg.data[j] = 110; limg.data[j+1] = 100; limg.data[j+2] = 110; limg.data[j+3] = 150; }
   }
   paintCtx.putImageData(img, 0, 0); lctx.putImageData(limg, 0, 0);
 
-  P = { id, w, h, N, ids, pal, reg, px, off, bbox, filled, remain, totalC, done, paint, paintCtx, img, lines, final: null };
+  P = { id, w, h, N, NP, ids, pal, reg, px, off, bbox, filled, remain, totalC, done, paint, paintCtx, img, lines, lineCol, final: null };
   preview = false; $('#eye').setAttribute('aria-pressed', 'false');
   $('#loading').hidden = true;
   fitView();
   sel = -1;
   buildPalette();
-  const first = pal.findIndex((_, c) => remain[c] > 0);
+  const first = pal.findIndex((_, c) => remain[c] > 0);   // colores sin zonas para pintar no aparecen
   if (first >= 0) selectColor(first); else finish(false);
   updatePct();
 }
@@ -235,7 +241,7 @@ function render(){
   ctx.imageSmoothingEnabled = s * dpr < 2.5;
   if (preview) { ctx.drawImage(finalImage(), 0, 0); return; }
   ctx.drawImage(P.paint, 0, 0);
-  if (P.done < P.N) ctx.drawImage(P.lines, 0, 0);
+  if (P.done < P.NP) ctx.drawImage(P.lines, 0, 0);
 
   // números de las zonas sin pintar que entran en pantalla
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -258,7 +264,7 @@ function render(){
 function finalImage(){
   if (P.final) return P.final;
   const c = new OffscreenCanvas(P.w, P.h), cx = c.getContext('2d'), im = cx.createImageData(P.w, P.h), d = im.data;
-  for (let i = 0; i < P.ids.length; i++) { const col = P.pal[P.reg[P.ids[i] - 1][0]], j = i * 4; d[j] = col[0]; d[j+1] = col[1]; d[j+2] = col[2]; d[j+3] = 255; }
+  for (let i = 0; i < P.ids.length; i++) { const r = P.ids[i], col = r ? P.pal[P.reg[r - 1][0]] : P.lineCol, j = i * 4; d[j] = col[0]; d[j+1] = col[1]; d[j+2] = col[2]; d[j+3] = 255; }
   cx.putImageData(im, 0, 0);
   return P.final = c;
 }
@@ -298,7 +304,7 @@ function fillRegion(r){
   updateSwatch(sel); updatePct(); scheduleSave();
   if (navigator.vibrate) try { navigator.vibrate(6); } catch {}
   if (P.remain[sel] === 0) {
-    if (P.done === P.N) { finish(true); return true; }
+    if (P.done === P.NP) { finish(true); return true; }
     const next = P.pal.findIndex((_, c) => P.remain[c] > 0 && c > sel);
     selectColor(next >= 0 ? next : P.pal.findIndex((_, c) => P.remain[c] > 0));
   }
@@ -313,6 +319,7 @@ function finish(celebrate){
 // ---------- paleta ----------
 function buildPalette(){
   $('#palette').innerHTML = P.pal.map((col, c) => {
+    if (!P.totalC[c]) return '';
     const ink = lumOf(col) > 150 ? '#2B2230' : '#fff';
     return `<button class="sw" data-c="${c}" style="background:rgb(${col});color:${ink}" aria-label="${t('color')} ${c + 1}"><svg viewBox="0 0 62 62"><circle cx="31" cy="31" r="29" fill="none" stroke="#E8628F" stroke-width="3" stroke-dasharray="0 999"/></svg><span>${c + 1}</span></button>`;
   }).join('');
@@ -326,7 +333,7 @@ function updateSwatch(c){
   if (P.remain[c] === 0) b.querySelector('span').textContent = '✓';
 }
 function updatePct(){
-  const p = Math.floor(P.done / P.N * 100);
+  const p = Math.floor(P.done / P.NP * 100);
   $('#pct').textContent = p + '%';
 }
 
@@ -339,7 +346,7 @@ function save(){
   for (let r = 1; r <= P.N; r++) if (P.filled[r]) bytes[r >> 3] |= 1 << (r & 7);
   let s = ''; bytes.forEach(b => s += String.fromCharCode(b));
   store.set('fill-' + P.id + '-' + P.N, btoa(s));
-  store.set('pct-' + P.id, P.done === P.N ? 100 : Math.floor(P.done / P.N * 100));
+  store.set('pct-' + P.id, P.done === P.NP ? 100 : Math.floor(P.done / P.NP * 100));
 }
 addEventListener('visibilitychange', () => { if (document.hidden) save(); });
 
