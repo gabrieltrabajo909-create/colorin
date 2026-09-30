@@ -1,58 +1,72 @@
 [
  {
   "id": "podio",
-  "title": "Podio"
+  "title": "Podio",
+  "title_en": "Podium"
  },
  {
   "id": "selfie-gorras-rojas",
-  "title": "Selfie con gorras rojas"
+  "title": "Selfie con gorras rojas",
+  "title_en": "Selfie with red caps"
  },
  {
   "id": "tortuga-y-snorkel",
-  "title": "Tortuga y snorkel"
+  "title": "Tortuga y snorkel",
+  "title_en": "Turtle and snorkel"
  },
  {
   "id": "helados",
-  "title": "Helados en el café"
+  "title": "Helados en el café",
+  "title_en": "Ice cream at the café"
  },
  {
   "id": "carruaje",
-  "title": "Carruaje"
+  "title": "Carruaje",
+  "title_en": "Carriage"
  },
  {
   "id": "gato",
-  "title": "Gato"
+  "title": "Gato",
+  "title_en": "Cat"
  },
  {
   "id": "caballo-en-montanas",
-  "title": "Caballo en las montañas"
+  "title": "Caballo en las montañas",
+  "title_en": "Horse in the mountains"
  },
  {
   "id": "paseo-en-bote",
-  "title": "Paseo en bote"
+  "title": "Paseo en bote",
+  "title_en": "Boat ride"
  },
  {
   "id": "playa-y-palmeras",
-  "title": "Playa y palmeras"
+  "title": "Playa y palmeras",
+  "title_en": "Beach and palm trees"
  },
  {
   "id": "caballos-decorativos",
-  "title": "Caballos decorativos"
+  "title": "Caballos decorativos",
+  "title_en": "Decorative horses"
  },
  {
   "id": "iglesia-de-madera",
-  "title": "Iglesia de madera"
+  "title": "Iglesia de madera",
+  "title_en": "Wooden church"
  },
  {
   "id": "bote-amarillo",
-  "title": "Bote amarillo"
+  "title": "Bote amarillo",
+  "title_en": "Yellow boat"
  },
  {
   "id": "caminata-fiordo",
-  "title": "Caminata en el fiordo"
+  "title": "Caminata en el fiordo",
+  "title_en": "Fjord hike"
  },
  {
   "id": "selfie-gran-muralla",
-  "title": "Selfie en la Gran Muralla"
+  "title": "Selfie en la Gran Muralla",
+  "title_en": "Great Wall selfie"
  }
 ]

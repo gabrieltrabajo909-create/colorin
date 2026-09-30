@@ -23,6 +23,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* galería */
 .gallery{height:100%;overflow:auto;padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.ghead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;max-width:900px}
+.lang{display:flex;background:var(--card);border-radius:999px;padding:3px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.lang button{padding:6px 11px;border-radius:999px;font-weight:800;font-size:13px;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.ibtn[aria-pressed="true"]{background:var(--accent);color:#fff}
 .gallery h1{margin:0 0 4px;font-size:30px;font-weight:900;letter-spacing:-.02em;color:var(--accent)}
 .gallery p.sub{margin:0 0 18px;color:var(--muted);font-size:14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:900px}
@@ -58,22 +63,25 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <body>
 
 <section class="gallery" id="gallery">
-  <h1>Colorin</h1>
-  <p class="sub">Elegí un dibujo y pintá por números</p>
+  <div class="ghead">
+    <div><h1>Colorin</h1><p class="sub" data-i18n="sub"></p></div>
+    <div class="lang" role="group" aria-label="Idioma / Language"><button id="l-es">ES</button><button id="l-en">EN</button></div>
+  </div>
   <div class="grid" id="grid"></div>
 </section>
 
 <section class="painter" id="painter" hidden>
   <div class="bar">
-    <button class="ibtn" id="back" aria-label="Volver"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="ibtn" id="back" data-i18n-aria="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="title" id="ptitle"></div>
     <div class="pct" id="pct"></div>
-    <button class="ibtn" id="find" aria-label="Buscar zona sin pintar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></button>
+    <button class="ibtn" id="eye" data-i18n-aria="preview" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button class="ibtn" id="find" data-i18n-aria="find"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></button>
   </div>
   <div class="stage" id="stage">
     <canvas id="cv"></canvas>
-    <div class="center" id="loading">Cargando dibujo…</div>
-    <div class="done-card" id="donecard" hidden><b>¡Terminado! 🎉</b>Quedó hermoso</div>
+    <div class="center" id="loading" data-i18n="loading"></div>
+    <div class="done-card" id="donecard" hidden><b data-i18n="doneT"></b><span data-i18n="doneS"></span></div>
   </div>
   <div class="palette" id="palette"></div>
 </section>
@@ -89,6 +97,23 @@ const store = {
 };
 let catalog = [];
 
+// ---------- idiomas ----------
+const T = {
+  es: { sub:'Elegí un dibujo y pintá por números', back:'Volver', preview:'Ver cómo queda terminado', find:'Buscar zona sin pintar', loading:'Cargando dibujo…',
+        doneT:'¡Terminado! 🎉', doneS:'Quedó hermoso', finished:'¡Terminado!', fresh:'Nuevo', toastDone:'¡Terminaste el dibujo! 🎉', color:'Color' },
+  en: { sub:'Pick a picture and color by number', back:'Back', preview:'See the finished picture', find:'Find an unpainted area', loading:'Loading picture…',
+        doneT:'Finished! 🎉', doneS:'It looks beautiful', finished:'Finished!', fresh:'New', toastDone:'You finished the picture! 🎉', color:'Color' },
+};
+let lang = store.get('lang') || ((navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en');
+const t = k => T[lang][k] || k;
+const titleOf = it => (lang === 'en' && it.title_en) || it.title;
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
+  $('#l-es').setAttribute('aria-pressed', lang === 'es'); $('#l-en').setAttribute('aria-pressed', lang === 'en');
+}
+
 // ---------- galería ----------
 async function showGallery(){
   $('#painter').hidden = true; $('#gallery').hidden = false;
@@ -96,14 +121,14 @@ async function showGallery(){
   $('#grid').innerHTML = catalog.map(it => {
     const p = +(store.get('pct-' + it.id) || 0);
     const img = p >= 100 ? 'thumb.jpg' : 'line.png';
-    return `<button class="card" data-id="${it.id}"><img src="catalog/${it.id}/${img}" alt="" loading="lazy"><div class="meta"><div class="t">${it.title}</div><div class="pbar"><i style="width:${p}%"></i></div><div class="p">${p >= 100 ? '¡Terminado!' : p ? p + '%' : 'Nuevo'}</div></div></button>`;
+    return `<button class="card" data-id="${it.id}"><img src="catalog/${it.id}/${img}" alt="" loading="lazy"><div class="meta"><div class="t">${titleOf(it)}</div><div class="pbar"><i style="width:${p}%"></i></div><div class="p">${p >= 100 ? t('finished') : p ? p + '%' : t('fresh')}</div></div></button>`;
   }).join('');
   document.querySelectorAll('.card').forEach(c => c.onclick = () => openPic(c.dataset.id));
 }
 
 // ---------- estado del dibujo ----------
 let P = null;   // { id, w, h, ids, pal, reg, px, off, bbox, filled, remain, total, done, paint, paintCtx, img, lines }
-let sel = -1;
+let sel = -1, preview = false;
 const cv = $('#cv'), ctx = cv.getContext('2d');
 let view = { s: 1, tx: 0, ty: 0 }, fitS = 1, dirty = true;
 
@@ -113,7 +138,7 @@ const lumOf = ([r, g, b]) => .299 * r + .587 * g + .114 * b;
 async function openPic(id){
   const it = catalog.find(x => x.id === id);
   $('#gallery').hidden = true; $('#painter').hidden = false;
-  $('#ptitle').textContent = it.title; $('#loading').hidden = false; $('#donecard').hidden = true; $('#palette').innerHTML = '';
+  $('#ptitle').textContent = titleOf(it); $('#loading').hidden = false; $('#donecard').hidden = true; $('#palette').innerHTML = '';
   P = null; dirty = true;
   const base = `catalog/${id}/`;
   const [data, bmp] = await Promise.all([
@@ -162,7 +187,8 @@ async function openPic(id){
   }
   paintCtx.putImageData(img, 0, 0); lctx.putImageData(limg, 0, 0);
 
-  P = { id, w, h, N, ids, pal, reg, px, off, bbox, filled, remain, totalC, done, paint, paintCtx, img, lines };
+  P = { id, w, h, N, ids, pal, reg, px, off, bbox, filled, remain, totalC, done, paint, paintCtx, img, lines, final: null };
+  preview = false; $('#eye').setAttribute('aria-pressed', 'false');
   $('#loading').hidden = true;
   fitView();
   sel = -1;
@@ -207,6 +233,7 @@ function render(){
   ctx.fillStyle = '#FBF3F6'; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * tx, dpr * ty);
   ctx.imageSmoothingEnabled = s * dpr < 2.5;
+  if (preview) { ctx.drawImage(finalImage(), 0, 0); return; }
   ctx.drawImage(P.paint, 0, 0);
   if (P.done < P.N) ctx.drawImage(P.lines, 0, 0);
 
@@ -226,6 +253,16 @@ function render(){
     ctx.fillText(c + 1, x * s + tx, y * s + ty);
   }
 }
+
+// la imagen terminada, armada una sola vez con los colores de cada zona
+function finalImage(){
+  if (P.final) return P.final;
+  const c = new OffscreenCanvas(P.w, P.h), cx = c.getContext('2d'), im = cx.createImageData(P.w, P.h), d = im.data;
+  for (let i = 0; i < P.ids.length; i++) { const col = P.pal[P.reg[P.ids[i] - 1][0]], j = i * 4; d[j] = col[0]; d[j+1] = col[1]; d[j+2] = col[2]; d[j+3] = 255; }
+  cx.putImageData(im, 0, 0);
+  return P.final = c;
+}
+$('#eye').onclick = () => { if (!P) return; preview = !preview; $('#eye').setAttribute('aria-pressed', preview); dirty = true; };
 
 // colorea los píxeles de una zona y marca el rectángulo a actualizar
 function setRegionPixels(r, mode){          // mode: 'fill' | 'blank' | 'hint'
@@ -270,14 +307,14 @@ function fillRegion(r){
 
 function finish(celebrate){
   sel = -1; $('#donecard').hidden = false; fitView(); dirty = true;
-  if (celebrate) toast('¡Terminaste el dibujo! 🎉');
+  if (celebrate) toast(t('toastDone'));
 }
 
 // ---------- paleta ----------
 function buildPalette(){
   $('#palette').innerHTML = P.pal.map((col, c) => {
     const ink = lumOf(col) > 150 ? '#2B2230' : '#fff';
-    return `<button class="sw" data-c="${c}" style="background:rgb(${col});color:${ink}" aria-label="Color ${c + 1}"><svg viewBox="0 0 62 62"><circle cx="31" cy="31" r="29" fill="none" stroke="#E8628F" stroke-width="3" stroke-dasharray="0 999"/></svg><span>${c + 1}</span></button>`;
+    return `<button class="sw" data-c="${c}" style="background:rgb(${col});color:${ink}" aria-label="${t('color')} ${c + 1}"><svg viewBox="0 0 62 62"><circle cx="31" cy="31" r="29" fill="none" stroke="#E8628F" stroke-width="3" stroke-dasharray="0 999"/></svg><span>${c + 1}</span></button>`;
   }).join('');
   document.querySelectorAll('.sw').forEach(b => { b.onclick = () => { if (P.remain[+b.dataset.c] > 0) selectColor(+b.dataset.c); }; updateSwatch(+b.dataset.c); });
 }
@@ -319,7 +356,7 @@ cv.addEventListener('pointerdown', e => {
   pts.set(e.pointerId, local(e));
   if (pts.size === 1) {
     const [x, y] = local(e), r = regionAt(x, y);
-    const canPaint = r && !P.filled[r] && P.reg[r - 1][0] === sel;
+    const canPaint = !preview && r && !P.filled[r] && P.reg[r - 1][0] === sel;
     gesture = { type: canPaint ? 'paint' : 'pan', x0: x, y0: y, tx: view.tx, ty: view.ty, moved: false };
     if (canPaint) fillRegion(r);
   } else if (pts.size === 2) {
@@ -337,7 +374,7 @@ cv.addEventListener('pointermove', e => {
     const ns = Math.max(fitS * .8, Math.min(MAX_S(), gesture.s0 * d / gesture.d0));
     const ix = (gesture.m0[0] - gesture.tx) / gesture.s0, iy = (gesture.m0[1] - gesture.ty) / gesture.s0;
     view.s = ns; view.tx = m[0] - ix * ns; view.ty = m[1] - iy * ns; clampView(); dirty = true;
-  } else if (gesture.type === 'paint') {
+  } else if (gesture.type === 'paint' && !preview) {
     fillRegion(regionAt(x, y));
   } else if (gesture.type === 'pan') {
     if (Math.hypot(x - gesture.x0, y - gesture.y0) > 8) gesture.moved = true;
@@ -373,6 +410,9 @@ addEventListener('resize', () => { if (P) { clampView(); dirty = true; } });
 let tt;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 2600); }
 
+$('#l-es').onclick = () => { lang = 'es'; store.set('lang', lang); applyLang(); showGallery(); };
+$('#l-en').onclick = () => { lang = 'en'; store.set('lang', lang); applyLang(); showGallery(); };
+applyLang();
 requestAnimationFrame(render);
 showGallery();
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
