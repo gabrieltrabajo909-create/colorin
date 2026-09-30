@@ -1,6 +1,6 @@
 """Convierte una ilustración en un dibujo "pintar por números" para la app.
 
-Uso: .venv/bin/python convert.py imagen.png salida_id [--colors 140] [--size 1200] [--min-area 60]
+Uso: .venv/bin/python convert.py imagen.png salida_id [--colors 140] [--size 1200] [--min-area 450]
 
 Genera en ../catalog/<salida_id>/:
   regions.png  mapa de zonas (id = R*256 + G)
@@ -16,8 +16,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument('src'); ap.add_argument('name')
 ap.add_argument('--colors', type=int, default=140)
 ap.add_argument('--size', type=int, default=1200)
-ap.add_argument('--min-area', type=int, default=60)
-ap.add_argument('--min-radius', type=float, default=2.0)
+ap.add_argument('--min-area', type=int, default=450)   # ~600 zonas: nivel fácil
+ap.add_argument('--min-radius', type=float, default=3.0)
 a = ap.parse_args()
 
 img = Image.open(a.src).convert('RGB')
